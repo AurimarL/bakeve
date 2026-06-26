@@ -1,170 +1,12 @@
-'use client';
 
+"use client"
+
+import generateAgentConfig from '@/functions/generateAgentConfig';
+import generateInstructions from '@/functions/generateInstructions';
+import processProject from '@/functions/processProject.action';
+import { AVAILABLE_TOOLS, PROVIDERS } from '@/lib/const';
+import { ModelOption, ToolOption } from '@/types';
 import { useState, useTransition } from 'react';
-
-// ============================================================================
-// 1. DADOS ESTRUTURADOS (MODELOS E FERRAMENTAS)
-// ============================================================================
-
-interface ModelOption {
-  id: string;
-  name: string;
-  sdkImport: string;
-  sdkCall: string;
-  packageName: string;
-}
-
-interface Provider {
-  name: string;
-  models: ModelOption[];
-}
-
-interface ToolOption {
-  id: string;
-  name: string;
-  description: string;
-  code: string;
-}
-
-const PROVIDERS: Provider[] = [
-  {
-    name: "OpenAI",
-    models: [
-      { id: "gpt-4o", name: "GPT-4o", sdkImport: "openai", sdkCall: "openai('gpt-4o')", packageName: "@ai-sdk/openai" },
-      { id: "gpt-4o-mini", name: "GPT-4o Mini", sdkImport: "openai", sdkCall: "openai('gpt-4o-mini')", packageName: "@ai-sdk/openai" }
-    ]
-  },
-  {
-    name: "Anthropic",
-    models: [
-      { id: "claude-3-5-sonnet", name: "Claude 3.5 Sonnet", sdkImport: "anthropic", sdkCall: "anthropic('claude-3-5-sonnet-latest')", packageName: "@ai-sdk/anthropic" }
-    ]
-  }
-];
-
-const AVAILABLE_TOOLS: ToolOption[] = [
-  {
-    id: "fetch_weather",
-    name: "Consultar Meteorologia",
-    description: "Permite ao agente obter a previsão do tempo atual de qualquer cidade.",
-    code: `import { tool } from "@vercel/eve";
-import { z } from "zod";
-
-export const fetch_weather = tool({
-  description: "Obtém a meteorologia atual para uma localização dada.",
-  parameters: z.object({
-    city: z.string().describe("O nome da cidade, ex: Lisboa")
-  }),
-  execute: async ({ city }) => {
-    return { location: city, temperature: "22°C", condition: "Sunny" };
-  }
-});`
-  },
-  {
-    id: "send_slack",
-    name: "Enviar Mensagem Slack",
-    description: "Permite ao agente disparar notificações e alertas para canais do Slack.",
-    code: `import { tool } from "@vercel/eve";
-import { z } from "zod";
-
-export const send_slack = tool({
-  description: "Envia uma mensagem de texto formatada para o Slack.",
-  parameters: z.object({
-    channel: z.string().describe("Nome do canal ou ID"),
-    message: z.string().describe("Conteúdo da mensagem")
-  }),
-  execute: async ({ channel, message }) => {
-    return { success: true, channel, timestamp: Date.now() };
-  }
-});`
-  },
-  {
-    id: "database_query",
-    name: "Consulta SQL Básica",
-    description: "Permite ao agente ler dados de forma segura de uma base de dados analítica.",
-    code: `import { tool } from "@vercel/eve";
-import { z } from "zod";
-
-export const database_query = tool({
-  description: "Executa consultas de leitura estruturadas na base de dados.",
-  parameters: z.object({
-    query: z.string().describe("Comando SQL SELECT de filtragem")
-  }),
-  execute: async ({ query }) => {
-    return { records: [], count: 0, status: "empty_result" };
-  }
-});`
-  }
-];
-
-// ============================================================================
-// 2. FUNÇÕES DE TEMPLATE (GERADORES DE TEXTO)
-// ============================================================================
-
-function generateInstructions(name: string, description: string): string {
-  return `# Role
-You are ${name || 'a Vercel Eve Agent'}.
-
-# Description
-${description || 'No description provided.'}
-
-# Core Objectives
-- Process instructions dynamically using your filesystem capability.
-`;
-}
-
-function generateAgentConfig(name: string, model: ModelOption): string {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  return `import { Agent } from "@vercel/eve";
-import { ${model.sdkImport} } from "${model.packageName}";
-
-export default new Agent({
-  name: "${slug || 'eve-agent'}",
-  model: ${model.sdkCall},
-  memory: true,
-});
-`;
-}
-
-// ============================================================================
-// 3. SERVER ACTIONS (BUN NATIVE FILESYSTEM & COMPRESSION)
-// ============================================================================
-
-/**
- * Persiste fisicamente a estrutura gerada no disco e cria o .zip nativo usando Bun.
- */
-async function processProjectWithBun(projectSlug: string, files: { path: string; content: string }[]) {
-  'use server';
-  try {
-    const baseTargetDir = `./generated-agents/${projectSlug}`;
-
-    // 1. Gravar todos os ficheiros recorrendo ao Bun.write nativo
-    for (const file of files) {
-      await Bun.write(`${baseTargetDir}/${file.path}`, file.content);
-    }
-
-    // 2. Criar arquivo comprimido .zip nativo do sistema via Bun.spawn
-    const zipProcess = Bun.spawn(["zip", "-r", `../../${projectSlug}-scaffold.zip`, "."], {
-      cwd: baseTargetDir
-    });
-    await zipProcess.exited;
-
-    // 3. Ler o arquivo zip gerado como um array de bytes para enviar de volta à UI de forma limpa
-    const zipFile = Bun.file(`./generated-agents/${projectSlug}-scaffold.zip`);
-    const arrayBuffer = await zipFile.arrayBuffer();
-
-    // Converter para base64 para poder trafegar via JSON na Server Action com segurança
-    const base64Zip = Buffer.from(arrayBuffer).toString('base64');
-
-    return { success: true, base64Zip };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-// ============================================================================
-// 4. COMPONENTE PRINCIPAL (INTERACTION & UI)
-// ============================================================================
 
 export default function Page() {
   const [agentName, setAgentName] = useState('');
@@ -210,7 +52,7 @@ export default function Page() {
 
     // Invoca as capacidades nativas do Bun no servidor
     startTransition(async () => {
-      const result = await processProjectWithBun(projectSlug, files);
+      const result = await processProject(projectSlug, files);
       if (result.success && result.base64Zip) {
         setBase64Archive(result.base64Zip);
       } else {
@@ -219,29 +61,7 @@ export default function Page() {
     });
   };
 
-  const handleDownloadZip = () => {
-    if (!base64Archive) return;
 
-    // Descarrega o binário processado pelo Bun de forma 100% nativa no browser
-    const projectSlug = agentName.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'eve-agent';
-    const binaryString = window.atob(base64Archive);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-
-    for (let i = 0; i < len; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-
-    const blob = new Blob([bytes], { type: 'application/zip' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${projectSlug}-scaffold.zip`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
@@ -326,7 +146,7 @@ export default function Page() {
                 <p className="text-xs text-gray-500 mt-0.5">Ficheiros criados localmente. Expande para analisar o código.</p>
               </div>
               <button
-                onClick={handleDownloadZip}
+                onClick={() => handleDownloadZip(base64Archive, agentName)}
                 disabled={!base64Archive}
                 className="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all whitespace-nowrap disabled:bg-gray-300"
               >
