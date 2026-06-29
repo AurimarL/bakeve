@@ -18,6 +18,13 @@ export interface ToolOption {
     code: string;
 }
 
+export interface ChannelOption {
+    id: string;
+    name: string;
+    description: string;
+    sampleEnv?: string[];
+}
+
 export interface AgentTemplate {
     id: string;
     name: string;
@@ -26,4 +33,5 @@ export interface AgentTemplate {
     instructions: string;
     modelId: string;
     toolIds: string[];
+    channelIds?: string[];
 }

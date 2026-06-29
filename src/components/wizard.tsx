@@ -1,13 +1,14 @@
 "use client"
 
 import generateProject from '@/functions/generateProject.action';
-import { AGENT_TEMPLATES, AVAILABLE_TOOLS, PROVIDERS } from '@/lib/const';
-import { AgentTemplate, ModelOption, ToolOption } from '@/types';
+import { AGENT_TEMPLATES, AVAILABLE_TOOLS, PROVIDERS, AVAILABLE_CHANNELS } from '@/lib/const';
+import { AgentTemplate, ModelOption, ToolOption, ChannelOption } from '@/types';
 import { useState, useTransition } from 'react';
 import ModelSelector from './ModelSelector';
+import TemplateSelector from './TemplateSelector';
 import ToolsList from './ToolsList';
 import OutputFilePreview from './OutputFilePreview';
-import TemplateSelector from './TemplateSelector';
+import ChannelsList from './ChannelsList';
 
 export default function Wizard() {
 
@@ -20,6 +21,7 @@ export default function Wizard() {
     const [base64Archive, setBase64Archive] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+    const [selectedChannels, setSelectedChannels] = useState<ChannelOption[]>([]);
 
     const handleSelectTemplate = (template: AgentTemplate) => {
         setSelectedTemplateId(template.id);
@@ -28,6 +30,7 @@ export default function Wizard() {
         const allModels = PROVIDERS.flatMap(p => p.models);
         setSelectedModel(allModels.find(m => m.id === template.modelId) ?? null);
         setSelectedTools(AVAILABLE_TOOLS.filter(t => template.toolIds.includes(t.id)));
+        setSelectedChannels(AVAILABLE_CHANNELS.filter(c => template.channelIds?.includes(c.id)));
     };
 
     const toggleTool = (tool: ToolOption) => {
@@ -38,7 +41,15 @@ export default function Wizard() {
         }
     };
 
-    const handleGenerate = async (e: React.SubmitEvent) => {
+    const toggleChannel = (channel: ChannelOption) => {
+        if (selectedChannels.find(c => c.id === channel.id)) {
+            setSelectedChannels(selectedChannels.filter(c => c.id !== channel.id));
+        } else {
+            setSelectedChannels([...selectedChannels, channel]);
+        }
+    };
+
+    const handleGenerate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!selectedModel) {
             alert("Por favor, selecione um modelo de inteligência artificial primeiro.");
@@ -52,7 +63,7 @@ export default function Wizard() {
         setExpandedFileIndex(null);
 
         startTransition(async () => {
-            const result = await generateProject(projectSlug, agentName, description, selectedModel, selectedTools);
+            const result = await generateProject(projectSlug, agentName, description, selectedModel, selectedTools, selectedChannels);
             if (result.success && result.base64Tar) {
                 // reconstruct generatedFiles client-side for preview
                 const files = [
@@ -61,6 +72,17 @@ export default function Wizard() {
                 ];
 
                 selectedTools.forEach(tool => files.push({ path: `agent/tools/${tool.id}.ts`, content: `...tool file in archive...` }));
+
+                // include channel placeholders in preview
+                selectedChannels.forEach(channel => {
+                    if (channel.id === 'slack') {
+                        files.push({ path: 'agent/channels/slack.ts', content: `import { connectSlackCredentials } from "@vercel/connect/eve";\nimport { slackChannel } from "eve/channels/slack";\nexport default slackChannel({\n  credentials: connectSlackCredentials("slack/${projectSlug}"),\n});` });
+                    }
+
+                    if (channel.id === 'telegram') {
+                        files.push({ path: 'agent/channels/telegram.ts', content: `import { telegramChannel } from "eve/channels/telegram";\nexport default telegramChannel({\n  botUsername: "${projectSlug}_bot",\n});` });
+                    }
+                });
 
                 setGeneratedFiles(files);
                 setBase64Archive(result.base64Tar);
@@ -95,6 +117,10 @@ export default function Wizard() {
                 {/* Provedores/Modelos */}
 
                 <ModelSelector selectedModel={selectedModel} setSelectedModel={setSelectedModel} />
+
+                {/* Channels */}
+
+                <ChannelsList selectedChannels={selectedChannels} toggleChannel={toggleChannel} />
 
                 {/* Lista de Ferramentas */}
 

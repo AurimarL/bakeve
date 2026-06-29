@@ -1,4 +1,4 @@
-import { AgentTemplate, Provider, ToolOption } from "@/types";
+import { AgentTemplate, Provider, ToolOption, ChannelOption } from "@/types";
 
 export const PROVIDERS: Provider[] = [
     {
@@ -25,7 +25,8 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         agentName: "",
         instructions: "",
         modelId: "gpt-4o-mini",
-        toolIds: [],
+      toolIds: [],
+      channelIds: [],
     },
     {
         id: "weather-monitor",
@@ -34,7 +35,8 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         agentName: "Weather Monitor",
         instructions: "És um agente especializado em meteorologia. Quando o utilizador pedir previsões, usa a ferramenta fetch_weather para obter dados atualizados e apresenta-os de forma clara e concisa.",
         modelId: "gpt-4o-mini",
-        toolIds: ["fetch_weather"],
+      toolIds: ["fetch_weather"],
+      channelIds: [],
     },
     {
         id: "slack-notifier",
@@ -43,7 +45,8 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         agentName: "Slack Notifier",
         instructions: "És um agente de notificações. A tua função é receber pedidos e disparar mensagens formatadas para os canais Slack corretos. Sê conciso e inclui sempre contexto relevante nas mensagens.",
         modelId: "gpt-4o",
-        toolIds: ["send_slack"],
+      toolIds: ["send_slack"],
+      channelIds: ["slack"],
     },
     {
         id: "data-analyst",
@@ -52,7 +55,8 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         agentName: "Data Analyst",
         instructions: "És um analista de dados sénior. Usa a ferramenta database_query para executar queries de leitura, interpreta os resultados e apresenta insights claros. Nunca executes queries que modifiquem dados.",
         modelId: "gpt-4o",
-        toolIds: ["database_query"],
+      toolIds: ["database_query"],
+      channelIds: [],
     },
     {
         id: "ops-agent",
@@ -61,7 +65,8 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         agentName: "Ops Agent",
         instructions: "És um agente de operações. Monitoriza métricas via database_query e envia alertas proativos para o Slack quando detetares anomalias ou limiares ultrapassados.",
         modelId: "gpt-4o",
-        toolIds: ["database_query", "send_slack"],
+      toolIds: ["database_query", "send_slack"],
+      channelIds: ["slack"],
     },
 ];
 
@@ -118,4 +123,19 @@ export const database_query = tool({
   }
 });`
     }
+];
+
+export const AVAILABLE_CHANNELS: ChannelOption[] = [
+  {
+    id: "slack",
+    name: "Slack",
+    description: "Enviar/receber mensagens via Slack using Eve's Slack channel",
+    sampleEnv: ["SLACK_BOT_TOKEN", "SLACK_SIGNING_SECRET"],
+  },
+  {
+    id: "telegram",
+    name: "Telegram",
+    description: "Conectar com um bot Telegram",
+    sampleEnv: ["TELEGRAM_BOT_TOKEN"],
+  },
 ];
