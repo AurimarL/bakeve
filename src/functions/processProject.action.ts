@@ -1,40 +1,34 @@
 "use server";
-import { mkdir } from 'node:fs/promises';
-export default async function processProject(projectSlug: string, files: { path: string; content: string }[]) {
+
+export default async function processProject(
+    projectSlug: string,
+    files: { path: string; content: string }[]
+) {
     try {
         const baseTargetDir = `./generated-agents/${projectSlug}`;
-
-        // garante que a pasta base exista (usa node:fs.promises em Bun)
-        await mkdir(baseTargetDir, { recursive: true });
-
-        // Mapa usado para criar o tar em memória
         const archiveFiles: Record<string, string> = {};
 
+        // 1. Write files natively. Bun.write automatically handles missing subdirectories!
         for (const file of files) {
-            // garante que subpastas existam antes de gravar
-            const dir = file.path.includes('/') ? file.path.substring(0, file.path.lastIndexOf('/')) : '';
-            if (dir) {
-                await mkdir(`${baseTargetDir}/${dir}`, { recursive: true });
-            }
+            const destinationPath = `${baseTargetDir}/${file.path}`;
+            await Bun.write(destinationPath, file.content);
 
-            await Bun.write(`${baseTargetDir}/${file.path}`, file.content);
-
-            // Alimenta o objeto para a criação do arquivo tar
+            // Populate the archive map
             archiveFiles[file.path] = file.content;
         }
 
-        // Criar o arquivo Tar nativo na memória usando Bun.Archive
+        // 2. Create the native tar.gz archive in memory
         const archive = new Bun.Archive(archiveFiles, { compress: "gzip" });
-
-        // Transformar o archive em um array de bytes (Uint8Array)
         const tarBytes = await archive.bytes();
 
-        // Também grava o .tar.gz no disco para servir via endpoint, se desejado
+        // 3. Save the archive to disk
         const tarPath = `${baseTargetDir}/${projectSlug}-scaffold.tar.gz`;
         await Bun.write(tarPath, tarBytes);
 
-        // Converter para base64 para trafegar via JSON na Server Action com segurança
-        const base64Tar = Buffer.from(tarBytes).toString('base64');
+        // 4. Native Bun Base64 conversion (much faster than Node's Buffer)
+        const base64Tar = btoa(
+            Array.from(tarBytes, byte => String.fromCharCode(byte)).join("")
+        );
 
         return { success: true, base64Tar, tarPath };
     } catch (error: any) {
