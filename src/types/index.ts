@@ -25,6 +25,13 @@ export interface ChannelOption {
     sampleEnv?: string[];
 }
 
+export interface ConnectionOption {
+    id: string;
+    name: string;
+    description: string;
+    sampleEnv?: string[];
+}
+
 export interface AgentTemplate {
     id: string;
     name: string;
@@ -34,4 +41,5 @@ export interface AgentTemplate {
     modelId: string;
     toolIds: string[];
     channelIds?: string[];
+    connectionIds?: string[];
 }

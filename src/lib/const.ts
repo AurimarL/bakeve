@@ -1,4 +1,4 @@
-import { AgentTemplate, Provider, ToolOption, ChannelOption } from "@/types";
+import { AgentTemplate, Provider, ToolOption, ChannelOption, ConnectionOption } from "@/types";
 
 export const PROVIDERS: Provider[] = [
     {
@@ -67,6 +67,7 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         modelId: "gpt-4o",
       toolIds: ["database_query", "send_slack"],
       channelIds: ["slack"],
+      connectionIds: ["mcp-local"],
     },
 ];
 
@@ -137,5 +138,20 @@ export const AVAILABLE_CHANNELS: ChannelOption[] = [
     name: "Telegram",
     description: "Conectar com um bot Telegram",
     sampleEnv: ["TELEGRAM_BOT_TOKEN"],
+  },
+];
+
+export const AVAILABLE_CONNECTIONS: ConnectionOption[] = [
+  {
+    id: "mcp-local",
+    name: "MCP (Local)",
+    description: "Conexão MCP local para desenvolvimento (http://localhost:3001/mcp)",
+    sampleEnv: [],
+  },
+  {
+    id: "mcp-linear",
+    name: "MCP (Linear)",
+    description: "Conexão MCP para Linear (usa auth connect())",
+    sampleEnv: [],
   },
 ];

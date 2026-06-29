@@ -5,7 +5,7 @@ import generateInstructions from './generateInstructions';
 
 type File = { path: string; content: string };
 
-export default async function generateProject(projectSlug: string, agentName: string, description: string, model: any, tools: any[] = [], channels: any[] = []) {
+export default async function generateProject(projectSlug: string, agentName: string, description: string, model: any, tools: any[] = [], channels: any[] = [], connections: any[] = []) {
     try {
         const files: File[] = [];
 
@@ -33,6 +33,27 @@ export default telegramChannel({
         for (const tool of tools) {
             files.push({ path: `agent/tools/${tool.id}.ts`, content: tool.code });
         }
+
+                // add connection files
+                for (const connection of connections) {
+                        if (connection.id === 'mcp-local') {
+                                files.push({ path: 'agent/connections/mcp-local.ts', content: `import { defineMcpClientConnection } from "eve/connections";
+export default defineMcpClientConnection({
+    url: "http://localhost:3001/mcp",
+    description: "Local dev server.",
+});` });
+                        }
+
+                        if (connection.id === 'mcp-linear') {
+                                files.push({ path: 'agent/connections/mcp-linear.ts', content: `import { connect } from "@vercel/connect/eve";
+import { defineMcpClientConnection } from "eve/connections";
+export default defineMcpClientConnection({
+    url: "https://mcp.linear.app/mcp",
+    description: "Linear workspace: issues, projects, cycles, and comments.",
+    auth: connect("linear/${projectSlug}"),
+});` });
+                        }
+                }
 
         // Delegar a escrita e arquivamento para processProject (import dinâmico para evitar ciclos)
         const { default: processProject } = await import('./processProject.action');

@@ -1,14 +1,15 @@
 "use client"
 
 import generateProject from '@/functions/generateProject.action';
-import { AGENT_TEMPLATES, AVAILABLE_TOOLS, PROVIDERS, AVAILABLE_CHANNELS } from '@/lib/const';
-import { AgentTemplate, ModelOption, ToolOption, ChannelOption } from '@/types';
+import { AGENT_TEMPLATES, AVAILABLE_TOOLS, PROVIDERS, AVAILABLE_CHANNELS, AVAILABLE_CONNECTIONS } from '@/lib/const';
+import { AgentTemplate, ModelOption, ToolOption, ChannelOption, ConnectionOption } from '@/types';
 import { useState, useTransition } from 'react';
 import ModelSelector from './ModelSelector';
 import TemplateSelector from './TemplateSelector';
 import ToolsList from './ToolsList';
 import OutputFilePreview from './OutputFilePreview';
 import ChannelsList from './ChannelsList';
+import ConnectionsList from './ConnectionsList';
 
 export default function Wizard() {
 
@@ -22,6 +23,7 @@ export default function Wizard() {
     const [isPending, startTransition] = useTransition();
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
     const [selectedChannels, setSelectedChannels] = useState<ChannelOption[]>([]);
+    const [selectedConnections, setSelectedConnections] = useState<ConnectionOption[]>([]);
 
     const handleSelectTemplate = (template: AgentTemplate) => {
         setSelectedTemplateId(template.id);
@@ -31,6 +33,7 @@ export default function Wizard() {
         setSelectedModel(allModels.find(m => m.id === template.modelId) ?? null);
         setSelectedTools(AVAILABLE_TOOLS.filter(t => template.toolIds.includes(t.id)));
         setSelectedChannels(AVAILABLE_CHANNELS.filter(c => template.channelIds?.includes(c.id)));
+        setSelectedConnections(AVAILABLE_CONNECTIONS.filter(c => template.connectionIds?.includes(c.id)));
     };
 
     const toggleTool = (tool: ToolOption) => {
@@ -63,7 +66,7 @@ export default function Wizard() {
         setExpandedFileIndex(null);
 
         startTransition(async () => {
-            const result = await generateProject(projectSlug, agentName, description, selectedModel, selectedTools, selectedChannels);
+            const result = await generateProject(projectSlug, agentName, description, selectedModel, selectedTools, selectedChannels, selectedConnections);
             if (result.success && result.base64Tar) {
                 // reconstruct generatedFiles client-side for preview
                 const files = [
@@ -81,6 +84,17 @@ export default function Wizard() {
 
                     if (channel.id === 'telegram') {
                         files.push({ path: 'agent/channels/telegram.ts', content: `import { telegramChannel } from "eve/channels/telegram";\nexport default telegramChannel({\n  botUsername: "${projectSlug}_bot",\n});` });
+                    }
+                });
+
+                // include connection placeholders in preview
+                selectedConnections.forEach(connection => {
+                    if (connection.id === 'mcp-local') {
+                        files.push({ path: 'agent/connections/mcp-local.ts', content: `import { defineMcpClientConnection } from "eve/connections";\nexport default defineMcpClientConnection({\n  url: "http://localhost:3001/mcp",\n  description: "Local dev server.",\n});` });
+                    }
+
+                    if (connection.id === 'mcp-linear') {
+                        files.push({ path: 'agent/connections/mcp-linear.ts', content: `import { connect } from "@vercel/connect/eve";\nimport { defineMcpClientConnection } from "eve/connections";\nexport default defineMcpClientConnection({\n  url: "https://mcp.linear.app/mcp",\n  description: "Linear workspace: issues, projects, cycles, and comments.",\n  auth: connect("linear/${projectSlug}"),\n});` });
                     }
                 });
 
@@ -121,6 +135,16 @@ export default function Wizard() {
                 {/* Channels */}
 
                 <ChannelsList selectedChannels={selectedChannels} toggleChannel={toggleChannel} />
+
+                {/* Connections */}
+
+                <ConnectionsList selectedConnections={selectedConnections} toggleConnection={(c) => {
+                    if (selectedConnections.find(s => s.id === c.id)) {
+                        setSelectedConnections(selectedConnections.filter(x => x.id !== c.id));
+                    } else {
+                        setSelectedConnections([...selectedConnections, c]);
+                    }
+                }} />
 
                 {/* Lista de Ferramentas */}
 
