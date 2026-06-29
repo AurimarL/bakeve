@@ -1,28 +1,42 @@
-'use server';
-
+"use server";
+import { mkdir } from 'node:fs/promises';
 export default async function processProject(projectSlug: string, files: { path: string; content: string }[]) {
     try {
         const baseTargetDir = `./generated-agents/${projectSlug}`;
 
-        // 1. Gravar todos os ficheiros recorrendo ao Bun.write nativo
+        // garante que a pasta base exista (usa node:fs.promises em Bun)
+        await mkdir(baseTargetDir, { recursive: true });
+
+        // Mapa usado para criar o tar em memória
+        const archiveFiles: Record<string, string> = {};
+
         for (const file of files) {
+            // garante que subpastas existam antes de gravar
+            const dir = file.path.includes('/') ? file.path.substring(0, file.path.lastIndexOf('/')) : '';
+            if (dir) {
+                await mkdir(`${baseTargetDir}/${dir}`, { recursive: true });
+            }
+
             await Bun.write(`${baseTargetDir}/${file.path}`, file.content);
+
+            // Alimenta o objeto para a criação do arquivo tar
+            archiveFiles[file.path] = file.content;
         }
 
-        // 2. Criar arquivo comprimido .zip nativo do sistema via Bun.spawn
-        const zipProcess = Bun.spawn(["zip", "-r", `../../${projectSlug}-scaffold.zip`, "."], {
-            cwd: baseTargetDir
-        });
-        await zipProcess.exited;
+        // Criar o arquivo Tar nativo na memória usando Bun.Archive
+        const archive = new Bun.Archive(archiveFiles, { compress: "gzip" });
 
-        // 3. Ler o arquivo zip gerado como um array de bytes para enviar de volta à UI de forma limpa
-        const zipFile = Bun.file(`./generated-agents/${projectSlug}-scaffold.zip`);
-        const arrayBuffer = await zipFile.arrayBuffer();
+        // Transformar o archive em um array de bytes (Uint8Array)
+        const tarBytes = await archive.bytes();
 
-        // Converter para base64 para poder trafegar via JSON na Server Action com segurança
-        const base64Zip = Buffer.from(arrayBuffer).toString('base64');
+        // Também grava o .tar.gz no disco para servir via endpoint, se desejado
+        const tarPath = `${baseTargetDir}/${projectSlug}-scaffold.tar.gz`;
+        await Bun.write(tarPath, tarBytes);
 
-        return { success: true, base64Zip };
+        // Converter para base64 para trafegar via JSON na Server Action com segurança
+        const base64Tar = Buffer.from(tarBytes).toString('base64');
+
+        return { success: true, base64Tar, tarPath };
     } catch (error: any) {
         return { success: false, error: error.message };
     }

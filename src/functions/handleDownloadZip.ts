@@ -1,7 +1,6 @@
-const handleDownloadZip = (base64Archive: string | null, agentName: string) => {
+export default function handleDownloadZip(base64Archive: string | null, agentName: string) {
     if (!base64Archive) return;
 
-    // Descarrega o binário processado pelo Bun de forma 100% nativa no browser
     const projectSlug = agentName.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'eve-agent';
     const binaryString = window.atob(base64Archive);
     const len = binaryString.length;
@@ -11,11 +10,15 @@ const handleDownloadZip = (base64Archive: string | null, agentName: string) => {
         bytes[i] = binaryString.charCodeAt(i);
     }
 
-    const blob = new Blob([bytes], { type: 'application/zip' });
+    // 1. Alterado para o MIME type correto do Gzip/Tar
+    const blob = new Blob([bytes], { type: 'application/gzip' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${projectSlug}-scaffold.zip`;
+
+    // 2. Alterado a extensão final para .tar.gz
+    link.download = `${projectSlug}-scaffold.tar.gz`;
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# bakeve — Eve Wizard
 
-## Getting Started
+A web-based scaffold wizard for [Vercel Eve](https://vercel.com/blog/eve) AI agents. Fill out a form, pick a model and tools, and download a ready-to-run Eve agent project as a `.tar.gz` archive.
 
-First, run the development server:
+## What it does
+
+1. Describe your agent (name + behavioral instructions)
+2. Select an AI model (OpenAI or Anthropic)
+3. Optionally attach pre-built tools (weather lookup, Slack notifications, SQL queries)
+4. Click **Compilar e Gravar Código do Agente** — the server generates and writes the project files, packages them into a `.tar.gz`, and returns it for download
+
+The generated project contains:
+
+```
+agent/
+  instructions.md      # agent role and rules
+  agent.ts             # Eve Agent config with selected model
+  tools/<tool-id>.ts   # one file per selected tool (optional)
+```
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Runtime | Bun |
+| UI | React 19 + Tailwind CSS v4 |
+| Archiving | `Bun.Archive` (native gzip tar) |
+| Linting/Formatting | Biome |
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+  app/                          # Next.js app router (layout, page)
+  components/
+    wizard.tsx                  # Main form and state orchestration
+    ModelSelector.tsx           # AI provider/model radio group
+    ToolsList.tsx               # Tool checkbox list
+    OutputFilePreview.tsx       # Generated file tree + download button
+  functions/
+    generateAgentConfig.ts      # Templates agent.ts from model metadata
+    generateInstructions.ts     # Templates instructions.md from user input
+    generateProject.action.ts   # Server action — assembles file list
+    processProject.action.ts    # Server action — writes files + creates archive
+    handleDownloadZip.ts        # Client-side .tar.gz download trigger
+  lib/
+    const.ts                    # Static providers, models, and available tools
+  types/
+    index.ts                    # ModelOption, Provider, ToolOption interfaces
+generated-agents/               # Output directory for scaffolded agent projects
+```
 
-## Learn More
+## Adding models
 
-To learn more about Next.js, take a look at the following resources:
+Edit `src/lib/const.ts` and add an entry to the `PROVIDERS` array:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```ts
+{ id: "gpt-4-turbo", name: "GPT-4 Turbo", sdkImport: "openai", sdkCall: "openai('gpt-4-turbo')", packageName: "@ai-sdk/openai" }
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Adding tools
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Add an entry to `AVAILABLE_TOOLS` in `src/lib/const.ts` with an `id`, `name`, `description`, and the full `code` string that will be written to `agent/tools/<id>.ts`.
