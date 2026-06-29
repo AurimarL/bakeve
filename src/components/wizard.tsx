@@ -4,6 +4,7 @@ import generateProject from '@/functions/generateProject.action';
 import { AGENT_TEMPLATES, AVAILABLE_TOOLS, PROVIDERS, AVAILABLE_CHANNELS, AVAILABLE_CONNECTIONS } from '@/lib/const';
 import { AgentTemplate, ModelOption, ToolOption, ChannelOption, ConnectionOption } from '@/types';
 import { useState, useTransition } from 'react';
+import { slackChannelTemplate, telegramChannelTemplate, mcpLocalConnectionTemplate, mcpLinearConnectionTemplate, packageJsonContent } from '../lib/agentTemplates';
 import ModelSelector from './ModelSelector';
 import TemplateSelector from './TemplateSelector';
 import ToolsList from './ToolsList';
@@ -52,7 +53,7 @@ export default function Wizard() {
         }
     };
 
-    const handleGenerate = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleGenerate = async (e: React.SubmitEvent) => {
         e.preventDefault();
         if (!selectedModel) {
             alert("Por favor, selecione um modelo de inteligência artificial primeiro.");
@@ -71,30 +72,31 @@ export default function Wizard() {
                 // reconstruct generatedFiles client-side for preview
                 const files = [
                     { path: 'agent/instructions.md', content: `...instructions available in archive...` },
-                    { path: 'agent/agent.ts', content: `...agent config available in archive...` }
+                    { path: 'agent/agent.ts', content: `...agent config available in archive...` },
+                    { path: 'package.json', content: packageJsonContent() }
                 ];
 
-                selectedTools.forEach(tool => files.push({ path: `agent/tools/${tool.id}.ts`, content: `...tool file in archive...` }));
+                selectedTools.forEach(tool => files.push({ path: `agent/tools/${tool.id}.ts`, content: tool.code ?? `...tool file in archive...` }));
 
-                // include channel placeholders in preview
+                // include channel placeholders in preview (use shared templates)
                 selectedChannels.forEach(channel => {
                     if (channel.id === 'slack') {
-                        files.push({ path: 'agent/channels/slack.ts', content: `import { connectSlackCredentials } from "@vercel/connect/eve";\nimport { slackChannel } from "eve/channels/slack";\nexport default slackChannel({\n  credentials: connectSlackCredentials("slack/${projectSlug}"),\n});` });
+                        files.push({ path: 'agent/channels/slack.ts', content: slackChannelTemplate(projectSlug) });
                     }
 
                     if (channel.id === 'telegram') {
-                        files.push({ path: 'agent/channels/telegram.ts', content: `import { telegramChannel } from "eve/channels/telegram";\nexport default telegramChannel({\n  botUsername: "${projectSlug}_bot",\n});` });
+                        files.push({ path: 'agent/channels/telegram.ts', content: telegramChannelTemplate(projectSlug) });
                     }
                 });
 
-                // include connection placeholders in preview
+                // include connection placeholders in preview (use shared templates)
                 selectedConnections.forEach(connection => {
                     if (connection.id === 'mcp-local') {
-                        files.push({ path: 'agent/connections/mcp-local.ts', content: `import { defineMcpClientConnection } from "eve/connections";\nexport default defineMcpClientConnection({\n  url: "http://localhost:3001/mcp",\n  description: "Local dev server.",\n});` });
+                        files.push({ path: 'agent/connections/mcp-local.ts', content: mcpLocalConnectionTemplate() });
                     }
 
                     if (connection.id === 'mcp-linear') {
-                        files.push({ path: 'agent/connections/mcp-linear.ts', content: `import { connect } from "@vercel/connect/eve";\nimport { defineMcpClientConnection } from "eve/connections";\nexport default defineMcpClientConnection({\n  url: "https://mcp.linear.app/mcp",\n  description: "Linear workspace: issues, projects, cycles, and comments.",\n  auth: connect("linear/${projectSlug}"),\n});` });
+                        files.push({ path: 'agent/connections/mcp-linear.ts', content: mcpLinearConnectionTemplate(projectSlug) });
                     }
                 });
 
