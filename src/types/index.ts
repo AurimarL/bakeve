@@ -17,3 +17,13 @@ export interface ToolOption {
     description: string;
     code: string;
 }
+
+export interface AgentTemplate {
+    id: string;
+    name: string;
+    description: string;
+    agentName: string;
+    instructions: string;
+    modelId: string;
+    toolIds: string[];
+}

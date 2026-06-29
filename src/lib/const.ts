@@ -1,4 +1,4 @@
-import { Provider, ToolOption } from "@/types";
+import { AgentTemplate, Provider, ToolOption } from "@/types";
 
 export const PROVIDERS: Provider[] = [
     {
@@ -16,6 +16,54 @@ export const PROVIDERS: Provider[] = [
     }
 ];
 
+
+export const AGENT_TEMPLATES: AgentTemplate[] = [
+    {
+        id: "blank",
+        name: "Em Branco",
+        description: "Começa do zero, sem configurações pré-definidas.",
+        agentName: "",
+        instructions: "",
+        modelId: "gpt-4o-mini",
+        toolIds: [],
+    },
+    {
+        id: "weather-monitor",
+        name: "Monitor Meteorológico",
+        description: "Agente que consulta e reporta condições meteorológicas.",
+        agentName: "Weather Monitor",
+        instructions: "És um agente especializado em meteorologia. Quando o utilizador pedir previsões, usa a ferramenta fetch_weather para obter dados atualizados e apresenta-os de forma clara e concisa.",
+        modelId: "gpt-4o-mini",
+        toolIds: ["fetch_weather"],
+    },
+    {
+        id: "slack-notifier",
+        name: "Notificador Slack",
+        description: "Agente que envia alertas e notificações para canais Slack.",
+        agentName: "Slack Notifier",
+        instructions: "És um agente de notificações. A tua função é receber pedidos e disparar mensagens formatadas para os canais Slack corretos. Sê conciso e inclui sempre contexto relevante nas mensagens.",
+        modelId: "gpt-4o",
+        toolIds: ["send_slack"],
+    },
+    {
+        id: "data-analyst",
+        name: "Analista de Dados",
+        description: "Agente que consulta bases de dados e interpreta resultados.",
+        agentName: "Data Analyst",
+        instructions: "És um analista de dados sénior. Usa a ferramenta database_query para executar queries de leitura, interpreta os resultados e apresenta insights claros. Nunca executes queries que modifiquem dados.",
+        modelId: "gpt-4o",
+        toolIds: ["database_query"],
+    },
+    {
+        id: "ops-agent",
+        name: "Agente de Operações",
+        description: "Combina consultas SQL com alertas Slack para pipelines de dados.",
+        agentName: "Ops Agent",
+        instructions: "És um agente de operações. Monitoriza métricas via database_query e envia alertas proativos para o Slack quando detetares anomalias ou limiares ultrapassados.",
+        modelId: "gpt-4o",
+        toolIds: ["database_query", "send_slack"],
+    },
+];
 
 export const AVAILABLE_TOOLS: ToolOption[] = [
     {

@@ -1,11 +1,13 @@
 "use client"
 
 import generateProject from '@/functions/generateProject.action';
-import { ModelOption, ToolOption } from '@/types';
+import { AGENT_TEMPLATES, AVAILABLE_TOOLS, PROVIDERS } from '@/lib/const';
+import { AgentTemplate, ModelOption, ToolOption } from '@/types';
 import { useState, useTransition } from 'react';
 import ModelSelector from './ModelSelector';
 import ToolsList from './ToolsList';
 import OutputFilePreview from './OutputFilePreview';
+import TemplateSelector from './TemplateSelector';
 
 export default function Wizard() {
 
@@ -17,6 +19,16 @@ export default function Wizard() {
     const [expandedFileIndex, setExpandedFileIndex] = useState<number | null>(null);
     const [base64Archive, setBase64Archive] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+    const handleSelectTemplate = (template: AgentTemplate) => {
+        setSelectedTemplateId(template.id);
+        setAgentName(template.agentName);
+        setDescription(template.instructions);
+        const allModels = PROVIDERS.flatMap(p => p.models);
+        setSelectedModel(allModels.find(m => m.id === template.modelId) ?? null);
+        setSelectedTools(AVAILABLE_TOOLS.filter(t => template.toolIds.includes(t.id)));
+    };
 
     const toggleTool = (tool: ToolOption) => {
         if (selectedTools.find(t => t.id === tool.id)) {
@@ -63,6 +75,10 @@ export default function Wizard() {
         <div>
             <form onSubmit={handleGenerate} className="bg-white shadow-sm border border-gray-200 rounded-xl p-6 sm:p-8 space-y-8">
 
+                {/* Templates */}
+
+                <TemplateSelector selectedId={selectedTemplateId} onSelect={handleSelectTemplate} />
+
                 {/* Metadados */}
 
                 <div className="grid grid-cols-1 gap-6">
@@ -95,7 +111,7 @@ export default function Wizard() {
 
             {/* Output do Workspace */}
 
-            <OutputFilePreview 
+            <OutputFilePreview
                 agentName={agentName}
                 generatedFiles={generatedFiles}
                 expandedFileIndex={expandedFileIndex}
