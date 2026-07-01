@@ -16,38 +16,39 @@ export default function OutputFilePreview({
 
     if (generatedFiles) {
         return (
-            <div className="mt-8 bg-white border border-gray-200 shadow-sm rounded-xl p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
+            <div className="mt-8 bg-slate-800 border border-slate-700 rounded-2xl p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-slate-700">
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Workspace Gerado</h2>
-                        <p className="text-xs text-gray-500 mt-0.5">Ficheiros criados localmente. Expande para analisar o código.</p>
+                        <h2 className="text-xl font-bold text-slate-100">Generated Workspace</h2>
+                        <p className="text-xs text-slate-500 mt-0.5">Files written locally. Expand to inspect the code.</p>
                     </div>
                     <button
                         onClick={() => handleDownloadZip(base64Archive, agentName)}
                         disabled={!base64Archive}
-                        className="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all whitespace-nowrap disabled:bg-gray-300"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-400 text-slate-950 text-sm font-semibold rounded-xl transition-colors duration-200 whitespace-nowrap cursor-pointer disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
                     >
-                        Descarregar Projeto (.tar/.zip)
+                        Download .tar.gz
                     </button>
                 </div>
 
-                <div className="space-y-3">
+                <div className="flex flex-col gap-2.5">
                     {generatedFiles.map((file, idx) => {
                         const isExpanded = expandedFileIndex === idx;
                         return (
-                            <div key={file.path} className="border border-gray-200 rounded-lg overflow-hidden">
-                                <div
+                            <div key={file.path} className="border border-slate-700 rounded-xl overflow-hidden">
+                                <button
+                                    type="button"
                                     onClick={() => setExpandedFileIndex(isExpanded ? null : idx)}
-                                    className="flex items-center justify-between p-3.5 bg-gray-50 cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                                    className="w-full flex items-center justify-between p-3.5 bg-slate-700/60 cursor-pointer select-none hover:bg-slate-700 transition-colors duration-150 text-left"
                                 >
-                                    <span className="font-mono text-sm font-medium text-gray-700">📁 {file.path}</span>
-                                    <span className="text-xs text-blue-600 font-semibold">
-                                        {isExpanded ? 'Ocultar' : 'Ver código'}
+                                    <span className="font-mono text-sm font-medium text-slate-300">{file.path}</span>
+                                    <span className="text-xs text-green-400 font-semibold shrink-0 ml-4">
+                                        {isExpanded ? 'Hide' : 'View'}
                                     </span>
-                                </div>
+                                </button>
                                 {isExpanded && (
-                                    <div className="p-4 bg-gray-900 border-t border-gray-200 overflow-x-auto">
-                                        <pre className="text-xs font-mono text-gray-100 leading-relaxed whitespace-pre-wrap">
+                                    <div className="p-4 bg-slate-950 border-t border-slate-700 overflow-x-auto">
+                                        <pre className="text-xs font-mono text-slate-300 leading-relaxed whitespace-pre-wrap">
                                             {file.content}
                                         </pre>
                                     </div>

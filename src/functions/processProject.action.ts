@@ -5,7 +5,7 @@ export default async function processProject(
     files: { path: string; content: string }[]
 ) {
     try {
-        const baseTargetDir = `./generated-agents/${projectSlug}`;
+        const baseTargetDir = `./_temp_generated-agents/${projectSlug}`;
         const archiveFiles: Record<string, string> = {};
 
         // 1. Write files natively. Bun.write automatically handles missing subdirectories!

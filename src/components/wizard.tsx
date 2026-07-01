@@ -53,7 +53,7 @@ export default function Wizard() {
         }
     };
 
-    const handleGenerate = async (e: React.SubmitEvent) => {
+    const handleGenerate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!selectedModel) {
             alert("Por favor, selecione um modelo de inteligência artificial primeiro.");
@@ -80,7 +80,7 @@ export default function Wizard() {
 
     return (
         <div>
-            <form onSubmit={handleGenerate} className="bg-white shadow-sm border border-gray-200 rounded-xl p-6 sm:p-8 space-y-8">
+            <form onSubmit={handleGenerate} className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-8">
 
                 {/* Templates */}
 
@@ -90,12 +90,12 @@ export default function Wizard() {
 
                 <div className="grid grid-cols-1 gap-6">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Nome do Agente</label>
-                        <input type="text" required placeholder="Ex: Bot de Monitorização" className="  w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-black outline-none" value={agentName} onChange={e => setAgentName(e.target.value)} />
+                        <label className="block text-sm font-semibold text-neutral-300 mb-1">Agent Name</label>
+                        <input type="text" required placeholder="e.g. Slack Notifier" className="w-full bg-neutral-800 border border-neutral-700 text-white placeholder:text-neutral-600 p-2.5 rounded-lg focus:ring-2 focus:ring-white focus:border-white outline-none" value={agentName} onChange={e => setAgentName(e.target.value)} />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Diretrizes e Regras (Instructions)</label>
-                        <textarea required rows={3} placeholder="Escreve o comportamento principal que o agente deve assume..." className="w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-black outline-none" value={description} onChange={e => setDescription(e.target.value)} />
+                        <label className="block text-sm font-semibold text-neutral-300 mb-1">Instructions</label>
+                        <textarea required rows={3} placeholder="Describe the agent's role, behaviour and rules..." className="w-full bg-neutral-800 border border-neutral-700 text-white placeholder:text-neutral-600 p-2.5 rounded-lg focus:ring-2 focus:ring-white focus:border-white outline-none resize-none" value={description} onChange={e => setDescription(e.target.value)} />
                     </div>
                 </div>
 
@@ -124,9 +124,9 @@ export default function Wizard() {
                 <button
                     type="submit"
                     disabled={isPending}
-                    className="w-full bg-black hover:bg-gray-900 text-white font-semibold p-3.5 rounded-xl shadow-sm transition-all text-center disabled:bg-gray-400"
+                    className="w-full bg-white hover:bg-neutral-100 text-black font-semibold p-3.5 rounded-xl transition-colors duration-200 text-center cursor-pointer disabled:bg-neutral-800 disabled:text-neutral-600 disabled:cursor-not-allowed"
                 >
-                    {isPending ? 'Bun a estruturar e a compactar ambiente...' : 'Compilar e Gravar Código do Agente'}
+                    {isPending ? 'Scaffolding project...' : 'Generate Agent'}
                 </button>
             </form>
 
