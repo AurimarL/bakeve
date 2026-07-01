@@ -30,7 +30,7 @@ export default async function processProject(
             Array.from(tarBytes, byte => String.fromCharCode(byte)).join("")
         );
 
-        return { success: true, base64Tar, tarPath };
+        return { success: true, base64Tar, tarPath, files };
     } catch (error: any) {
         return { success: false, error: error.message };
     }

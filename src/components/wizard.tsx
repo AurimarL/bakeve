@@ -4,7 +4,7 @@ import generateProject from '@/functions/generateProject.action';
 import { AGENT_TEMPLATES, AVAILABLE_TOOLS, PROVIDERS, AVAILABLE_CHANNELS, AVAILABLE_CONNECTIONS } from '@/lib/const';
 import { AgentTemplate, ModelOption, ToolOption, ChannelOption, ConnectionOption } from '@/types';
 import { useState, useTransition } from 'react';
-import { slackChannelTemplate, telegramChannelTemplate, mcpLocalConnectionTemplate, mcpLinearConnectionTemplate, packageJsonContent } from '../lib/agentTemplates';
+
 import ModelSelector from './ModelSelector';
 import TemplateSelector from './TemplateSelector';
 import ToolsList from './ToolsList';
@@ -69,38 +69,7 @@ export default function Wizard() {
         startTransition(async () => {
             const result = await generateProject(projectSlug, agentName, description, selectedModel, selectedTools, selectedChannels, selectedConnections);
             if (result.success && result.base64Tar) {
-                // reconstruct generatedFiles client-side for preview
-                const files = [
-                    { path: 'agent/instructions.md', content: `...instructions available in archive...` },
-                    { path: 'agent/agent.ts', content: `...agent config available in archive...` },
-                    { path: 'package.json', content: packageJsonContent() }
-                ];
-
-                selectedTools.forEach(tool => files.push({ path: `agent/tools/${tool.id}.ts`, content: tool.code ?? `...tool file in archive...` }));
-
-                // include channel placeholders in preview (use shared templates)
-                selectedChannels.forEach(channel => {
-                    if (channel.id === 'slack') {
-                        files.push({ path: 'agent/channels/slack.ts', content: slackChannelTemplate(projectSlug) });
-                    }
-
-                    if (channel.id === 'telegram') {
-                        files.push({ path: 'agent/channels/telegram.ts', content: telegramChannelTemplate(projectSlug) });
-                    }
-                });
-
-                // include connection placeholders in preview (use shared templates)
-                selectedConnections.forEach(connection => {
-                    if (connection.id === 'mcp-local') {
-                        files.push({ path: 'agent/connections/mcp-local.ts', content: mcpLocalConnectionTemplate() });
-                    }
-
-                    if (connection.id === 'mcp-linear') {
-                        files.push({ path: 'agent/connections/mcp-linear.ts', content: mcpLinearConnectionTemplate(projectSlug) });
-                    }
-                });
-
-                setGeneratedFiles(files);
+                setGeneratedFiles(result.files ?? []);
                 setBase64Archive(result.base64Tar);
             } else {
                 console.error("Falha ao processar no runtime do Bun:", result.error);

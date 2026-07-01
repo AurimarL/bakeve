@@ -11,9 +11,7 @@ export default function Page() {
             Build Eve
           </p>
         </div>
-
         <Wizard />
-
       </div>
     </div>
   );
