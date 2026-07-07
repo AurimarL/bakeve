@@ -16,7 +16,7 @@ export default function handleDownloadZip(base64Archive: string | null, agentNam
     const link = document.createElement('a');
     link.href = url;
 
-    // 2. Alterado a extensão final para .tar.gz
+    // 2. Set the correct file extension to .tar.gz
     link.download = `${projectSlug}-scaffold.tar.gz`;
 
     document.body.appendChild(link);

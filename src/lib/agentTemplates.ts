@@ -48,8 +48,8 @@ export function packageJsonContent(): string {
     },
     dependencies: {
       '@vercel/connect': '0.2.2',
-      ai: '7.0.0-beta.178',
-      eve: '^0.13.6',
+      ai: '^7.0.0',
+      eve: '^0.22.0',
       zod: '4.4.3',
     },
     devDependencies: {
@@ -57,15 +57,31 @@ export function packageJsonContent(): string {
       typescript: '7.0.1-rc',
     },
     overrides: {
-      ai: '7.0.0-beta.178',
+      ai: '^7.0.0',
     },
-    resolutions: {
-      ai: '7.0.0-beta.178',
-    },
+    
     engines: {
       node: '24.x',
     },
   };
 
   return JSON.stringify(pkg, null, 2) + '\n';
+}
+
+export function tsconfigJsonContent(): string {
+  const tsconfig = {
+    "compilerOptions": {
+      "target": "ES2022",
+      "module": "NodeNext",
+      "moduleResolution": "NodeNext",
+      "types": ["node"],
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "noEmit": true
+    },
+    "include": ["agent/**/*.ts", "evals/**/*.ts", ".eve/**/*.d.ts"]
+  }
+
+  return JSON.stringify(tsconfig, null, 2) + '\n';
 }

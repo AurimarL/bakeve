@@ -1,7 +1,7 @@
 "use client"
 
 import generateProject from '@/functions/generateProject.action';
-import { AGENT_TEMPLATES, AVAILABLE_TOOLS, PROVIDERS, AVAILABLE_CHANNELS, AVAILABLE_CONNECTIONS } from '@/lib/const';
+import { AVAILABLE_TOOLS, PROVIDERS, AVAILABLE_CHANNELS, AVAILABLE_CONNECTIONS } from '@/lib/const';
 import { AgentTemplate, ModelOption, ToolOption, ChannelOption, ConnectionOption } from '@/types';
 import { useState, useTransition } from 'react';
 
@@ -56,7 +56,7 @@ export default function Wizard() {
     const handleGenerate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!selectedModel) {
-            alert("Por favor, selecione um modelo de inteligência artificial primeiro.");
+            alert("Please select an AI model first.");
             return;
         }
 
@@ -72,7 +72,7 @@ export default function Wizard() {
                 setGeneratedFiles(result.files ?? []);
                 setBase64Archive(result.base64Tar);
             } else {
-                console.error("Falha ao processar no runtime do Bun:", result.error);
+                console.error("Failed to process project:", result.error);
             }
         });
     };
@@ -99,7 +99,7 @@ export default function Wizard() {
                     </div>
                 </div>
 
-                {/* Provedores/Modelos */}
+                {/* Model */}
 
                 <ModelSelector selectedModel={selectedModel} setSelectedModel={setSelectedModel} />
 
@@ -117,7 +117,7 @@ export default function Wizard() {
                     }
                 }} />
 
-                {/* Lista de Ferramentas */}
+                {/* Tools */}
 
                 <ToolsList selectedTools={selectedTools} toggleTool={toggleTool} />
 

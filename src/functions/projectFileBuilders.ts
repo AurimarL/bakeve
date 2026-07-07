@@ -1,19 +1,31 @@
 import generateAgentConfig from './generateAgentConfig';
 import generateInstructions from './generateInstructions';
-import { slackChannelTemplate, telegramChannelTemplate, mcpLocalConnectionTemplate, mcpLinearConnectionTemplate, packageJsonContent } from '../lib/agentTemplates';
+import { slackChannelTemplate, telegramChannelTemplate, mcpLocalConnectionTemplate, mcpLinearConnectionTemplate, packageJsonContent, tsconfigJsonContent } from '../lib/agentTemplates';
 
 export type File = { path: string; content: string };
 
-export function buildAgentFiles(agentName: string, description: string, model: any): File[] {
+export function buildAgentFiles(
+  agentName: string,
+  description: string,
+  model: any,
+  tools: any[] = [],
+  channels: any[] = [],
+  connections: any[] = []
+): File[] {
   return [
     { path: 'agent/instructions.md', content: generateInstructions(agentName, description) },
-    { path: 'agent/agent.ts', content: generateAgentConfig(agentName, model) },
+    { path: 'agent/agent.ts', content: generateAgentConfig(agentName, model, tools, channels, connections) },
   ];
 }
 
 export function buildPackageJson(): File {
   return { path: 'package.json', content: packageJsonContent() };
 }
+
+export function buildTsconfigJson(): File {
+  return { path: 'tsconfig.json', content: tsconfigJsonContent() };
+}
+
 
 export function buildChannelFiles(projectSlug: string, channels: any[] = []): File[] {
   const files: File[] = [];
@@ -43,4 +55,10 @@ export function buildConnectionFiles(projectSlug: string, connections: any[] = [
     }
   }
   return files;
+}
+
+export function buildEnvExample(channels: any[]): File {
+  const keys = channels.flatMap(c => c.sampleEnv || []);
+  const content = keys.map(k => `${k}=your_value_here`).join("\n");
+  return { path: '.env.example', content: content || "# No environment variables required\n" };
 }
